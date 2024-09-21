@@ -17,7 +17,6 @@ class App:
         self.master.title("Auto")
         self.master.geometry("400x400+0+0")
         self.master.config(bg="#f0f0f0")
-        self.master.iconbitmap(r'C:\Users\letha\OneDrive\Documents\python\test au2pc\image\logo.ico')
 
         self.title_label = Label(master, text="Quay vòng quay", font=("Arial", 14, "bold"), bg="#f0f0f0")
         self.title_label.pack(pady=5)
