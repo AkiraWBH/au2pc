@@ -2,7 +2,7 @@ import subprocess
 import pyautogui
 import time
 import os
-from tkinter import Tk, Label, Button, Text, Scrollbar, END, filedialog, PhotoImage
+from tkinter import Tk, Label, Button, Text, Scrollbar, END, filedialog
 import threading
 import pygetwindow as gw
 import pyperclip
@@ -35,6 +35,7 @@ class App:
         self.text_area['yscrollcommand'] = self.scrollbar.set
 
         self.process_thread = None
+        self.base_dir = os.getcwd()  # Đường dẫn tương đối
 
     def start_process(self):
         self.label.config(text="Đang xử lý...")
@@ -50,8 +51,12 @@ class App:
     def process_task(self):
         launcher_path = self.select_game_launcher()
         if launcher_path:
-            account_file = r'C:\Users\letha\OneDrive\Documents\python\test au2pc\acc.txt'
+            account_file = os.path.join(self.base_dir, 'acc.txt')
             accounts = self.read_accounts_from_file(account_file)
+
+            if not accounts:
+                self.label.config(text="Không có tài khoản để xử lý.")
+                return
 
             process_names = ["au2pc.exe", "VTCPlus.exe"]
 
@@ -116,7 +121,7 @@ class App:
         time.sleep(5)
         self.append_to_text_area("Bắt đầu quá trình đăng nhập...")
         try:
-            username_field = pyautogui.locateOnScreen(r'C:\Users\letha\OneDrive\Documents\python\test au2pc\image\login.png', confidence=0.8)
+            username_field = pyautogui.locateOnScreen(os.path.join(self.base_dir, 'image', 'login.png'), confidence=0.8)
             if username_field:
                 pyperclip.copy(username)
                 pyautogui.click(username_field)
@@ -125,7 +130,7 @@ class App:
             else:
                 self.append_to_text_area("Không tìm thấy tài khoản.")
 
-            password_field = pyautogui.locateOnScreen(r'C:\Users\letha\OneDrive\Documents\python\test au2pc\image\pass.png', confidence=0.8)
+            password_field = pyautogui.locateOnScreen(os.path.join(self.base_dir, 'image', 'pass.png'), confidence=0.8)
             if password_field:
                 pyperclip.copy(password)
                 pyautogui.click(password_field)
@@ -137,19 +142,23 @@ class App:
             pyautogui.press('enter')
             time.sleep(3)
 
-            login_button = pyautogui.locateOnScreen(r'C:\Users\letha\OneDrive\Documents\python\test au2pc\image\dangnhap.png', confidence=0.8)
+            login_button = pyautogui.locateOnScreen(os.path.join(self.base_dir, 'image', 'dangnhap.png'), confidence=0.8)
             if login_button:
                 pyautogui.click(login_button)
                 self.append_to_text_area("Đã nhấp vào nút đăng nhập.")
             else:
                 self.append_to_text_area("Không tìm thấy nút đăng nhập.")
 
-            self.append_to_text_area("Đang đăng nhập vào game!")
+            self.append_to_text_area("Đang vào game!")
         except Exception as e:
-            self.append_to_text_area(f"Có lỗi! Tắt chạy lại{e}")
+            self.append_to_text_area(f"Có lỗi! Tắt chạy lại: {e}")
 
     def read_accounts_from_file(self, file_path):
         self.append_to_text_area(f"Đọc tài khoản từ file: {file_path}")
+        if not os.path.exists(file_path):
+            self.append_to_text_area("Tệp acc.txt không tìm thấy!")
+            return []
+
         with open(file_path, 'r') as file:
             accounts = [line.strip().split(':') for line in file.readlines() if line.strip()]
         self.append_to_text_area(f"Tổng số acc: {len(accounts)}")
@@ -164,8 +173,8 @@ class App:
                 self.append_to_text_area(f"Lỗi khi tắt launcher: {e}")
 
     def click_nut_1(self):
-        image_path_1 = r'C:\Users\letha\OneDrive\Documents\python\test au2pc\image\nut1_1.png'
-        image_path_2 = r'C:\Users\letha\OneDrive\Documents\python\test au2pc\image\nut1_2.png'
+        image_path_1 = os.path.join(self.base_dir, 'image', 'nut1_1.png')
+        image_path_2 = os.path.join(self.base_dir, 'image', 'nut1_2.png')
 
         self.append_to_text_area("Đang tìm Vòng Quay...")
         for attempt in range(3):
@@ -188,7 +197,7 @@ class App:
         return False
 
     def click_nut_2(self):
-        image_path_2 = r'C:\Users\letha\OneDrive\Documents\python\test au2pc\image\nut2.png'
+        image_path_2 = os.path.join(self.base_dir, 'image', 'nut2.png')
         self.append_to_text_area("Đang tìm nút quay...")
         click_position_2 = pyautogui.locateOnScreen(image_path_2, confidence=0.5)
         if click_position_2:
@@ -200,13 +209,14 @@ class App:
             self.append_to_text_area("Không tìm thấy nút 2.")
 
     def create_screenshots_directory(self):
-        screenshots_directory = "kiểm tra"
+        screenshots_directory = os.path.join(self.base_dir, "kiểm tra")
         if not os.path.exists(screenshots_directory):
             os.makedirs(screenshots_directory)
             self.append_to_text_area(f"Thư mục '{screenshots_directory}' đã được tạo.")
 
     def take_screenshot(self, username):
-        screenshots_directory = "kiểm tra"
+        self.create_screenshots_directory()
+        screenshots_directory = os.path.join(self.base_dir, "kiểm tra")
         game_window = gw.getWindowsWithTitle('Au2PCGame')[0]
         if game_window:
             x, y, width, height = game_window.left, game_window.top, game_window.width, game_window.height
@@ -219,7 +229,7 @@ class App:
             self.append_to_text_area("Không tìm thấy cửa sổ game.")
 
     def is_game_loaded(self):
-        game_interface_image = r'C:\Users\letha\OneDrive\Documents\python\test au2pc\image\giaodien.png'
+        game_interface_image = os.path.join(self.base_dir, 'image', 'giaodien.png')
         return pyautogui.locateOnScreen(game_interface_image, confidence=0.5) is not None
 
 if __name__ == "__main__":
