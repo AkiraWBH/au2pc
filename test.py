@@ -7,6 +7,7 @@ import threading
 import pygetwindow as gw
 import pyperclip
 import sys
+from datetime import datetime
 
 if sys.stdout is not None:
     sys.stdout.reconfigure(encoding='utf-8')
@@ -35,7 +36,7 @@ class App:
         self.text_area['yscrollcommand'] = self.scrollbar.set
 
         self.process_thread = None
-        self.base_dir = os.getcwd()  # Đường dẫn tương đối
+        self.base_dir = os.getcwd()
 
     def start_process(self):
         self.label.config(text="Đang xử lý...")
@@ -60,39 +61,41 @@ class App:
 
             process_names = ["au2pc.exe", "VTCPlus.exe"]
 
-            for username, password in accounts:
-                while True:
-                    self.label.config(text=f"Đang xử lý tài khoản: {username}")
-                    self.append_to_text_area(f"Đang xử lý tài khoản: {username}")
+            while accounts:
+                username, password = accounts[0]
+                self.label.config(text=f"Đang xử lý tài khoản: {username}")
+                self.append_to_text_area(f"Đang xử lý tài khoản: {username}")
 
-                    if self.open_launcher(launcher_path):
-                        self.auto_login(username, password)
+                if self.open_launcher(launcher_path):
+                    self.auto_login(username, password)
 
-                        time.sleep(20)
+                    time.sleep(20)
 
-                        if not self.is_game_loaded():
-                            self.label.config(text="Game chưa vào, đang thử lại...")
-                            self.append_to_text_area("Game chưa vào, đang thử lại...")
-                            self.close_launcher(process_names)
-                            continue
-
-                        if not self.click_nut_1():
-                            self.label.config(text="Đang thử lại với tài khoản...")
-                            self.append_to_text_area("Đang thử lại với tài khoản...")
-                            continue
-
-                        time.sleep(4)
-                        self.click_nut_2()
-                        self.take_screenshot(username)
-
+                    if not self.is_game_loaded():
+                        self.label.config(text="Game chưa vào, đang thử lại...")
+                        self.append_to_text_area("Game chưa vào, đang thử lại...")
                         self.close_launcher(process_names)
-                        self.label.config(text="Đợi một chút trước khi mở lại launcher cho tài khoản tiếp theo")
-                        self.append_to_text_area("Đợi một chút trước khi mở lại launcher cho tài khoản tiếp theo")
-                        time.sleep(5)
-                        break
+                        continue
 
-        self.label.config(text="Đã xong hết acc, không còn acc để tiếp tục!")
-        self.append_to_text_area("Đã xong hết acc, không còn acc để tiếp tục!")
+                    if not self.click_nut_1():
+                        self.label.config(text="Đang thử lại với tài khoản...")
+                        self.append_to_text_area("Đang thử lại với tài khoản...")
+                        continue
+
+                    time.sleep(4)
+                    self.click_nut_2()
+                    self.take_screenshot(username)
+
+                    self.close_launcher(process_names)
+                    self.label.config(text="Đợi một chút trước khi mở lại launcher cho tài khoản tiếp theo")
+                    self.append_to_text_area("Đợi một chút trước khi mở lại launcher cho tài khoản tiếp theo")
+                    time.sleep(5)
+
+                    accounts.pop(0)
+                    self.write_accounts_to_file(account_file, accounts)
+
+            self.label.config(text="Đã xong hết acc, không còn acc để tiếp tục!")
+            self.append_to_text_area("Đã xong hết acc, không còn acc để tiếp tục!")
 
     def select_game_launcher(self):
         launcher_path = filedialog.askopenfilename(
@@ -140,7 +143,7 @@ class App:
                 self.append_to_text_area("Không tìm thấy mật khẩu.")
             
             pyautogui.press('enter')
-            time.sleep(3)
+            time.sleep(2)
 
             login_button = pyautogui.locateOnScreen(os.path.join(self.base_dir, 'image', 'dangnhap.png'), confidence=0.8)
             if login_button:
@@ -164,6 +167,11 @@ class App:
         self.append_to_text_area(f"Tổng số acc: {len(accounts)}")
         return accounts
 
+    def write_accounts_to_file(self, file_path, accounts):
+        with open(file_path, 'w') as file:
+            for username, password in accounts:
+                file.write(f"{username}:{password}\n")
+
     def close_launcher(self, process_names):
         for process_name in process_names:
             try:
@@ -177,18 +185,20 @@ class App:
         image_path_2 = os.path.join(self.base_dir, 'image', 'nut1_2.png')
 
         self.append_to_text_area("Đang tìm Vòng Quay...")
-        for attempt in range(3):
+        for attempt in range(4):
             click_position_1 = pyautogui.locateOnScreen(image_path_1, confidence=0.5)
             if click_position_1:
-                for _ in range(3):
+                for _ in range(4):
                     pyautogui.click(click_position_1)
+                    time.sleep(0.5)
                 self.append_to_text_area("Đã nhấp vào Vòng Quay.")
                 return True
 
             click_position_2 = pyautogui.locateOnScreen(image_path_2, confidence=0.5)
             if click_position_2:
-                for _ in range(3):
+                for _ in range(4):
                     pyautogui.click(click_position_2)
+                    time.sleep(0.5)
                 self.append_to_text_area("Đã nhấp vào vòng quay quay.")
                 return True
 
@@ -201,10 +211,10 @@ class App:
         self.append_to_text_area("Đang tìm nút quay...")
         click_position_2 = pyautogui.locateOnScreen(image_path_2, confidence=0.5)
         if click_position_2:
-            for _ in range(3):
+            for _ in range(4):
                 pyautogui.click(click_position_2)
             self.append_to_text_area("Đã nhấp vào nút quay.")
-            self.append_to_text_area("Chờ 10s để quay!")
+            self.append_to_text_area("Chờ 5s để quay!")
         else:
             self.append_to_text_area("Không tìm thấy nút 2.")
 
@@ -220,8 +230,12 @@ class App:
         game_window = gw.getWindowsWithTitle('Au2PCGame')[0]
         if game_window:
             x, y, width, height = game_window.left, game_window.top, game_window.width, game_window.height
-            screenshot_path = os.path.join(screenshots_directory, f"{username}.png")
-            time.sleep(10)
+            
+            current_time = datetime.now().strftime("%m%d_%H%M")
+            screenshot_filename = f"{username}_{current_time}.png"
+            screenshot_path = os.path.join(screenshots_directory, screenshot_filename)
+            
+            time.sleep(5)
             screenshot = pyautogui.screenshot(region=(x, y, width, height))
             screenshot.save(screenshot_path)
             self.append_to_text_area(f"Đã chụp màn hình game và lưu tại: {screenshot_path}")
